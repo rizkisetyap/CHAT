@@ -1,0 +1,115 @@
+﻿@model Dictionary<string,dynamic>
+@{
+    ViewData["Title"] = "Group";
+    var currentUser = User.Identity.Name;
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 col-sm-12">
+            <h5 class="h5">Chat @User.Identity.Name</h5>
+            <div class="chat-container">
+                <div class="chat-message-container">
+                    @foreach (var messages in Model["chats"])
+                    {
+                        var sender = messages.SenderEmail == @User.Identity.Name ? "sender" : "";
+                        <div class="message-container @sender">
+                            <div class="message">
+                                <span>@messages.Message</span>
+                            </div>
+                            <span class="date">@DateTime.Now.ToString("HH.mm")</span>
+                        </div>
+                    }
+                </div>
+                <div class="chat-bottom">
+                    <form id="form-msg" class="d-flex align-items-center">
+                        <input id="msg" type="text" value="" class="form-control" />
+                        <button type="submit" class="btn btn-success">Kirim</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-6">
+            <h5 class="h5">Members</h5>
+            <ul>
+                @foreach (var members in Model["members"])
+                {
+                    <li>@members.UserName</li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <script>
+        connection.on("ReceiveMessage", function (msg) {
+            console.log(msg);
+            $(".chat-message-container").empty();
+            $.each(msg, function (idx, value) {
+                var sender = value.senderEmail === "@currentUser" ? "sender" : "";
+                let date = value.date;
+                date = date.split("T")[1];
+                date = date.substr(0, 5);
+                let html = `<div class="message-container ${sender}" >` +
+                    `<div class="message" >` +
+                    `<span>${value.message}</span>` +
+                    `</div>` +
+                    `<span class="date">${date}</span>` +
+                    ` </div>`;
+                $(".chat-message-container").append($(html));
+
+            });
+            $(".chat-message-container").stop().animate({ scrollTop: $(".chat-message-container")[0].scrollHeight }, 1000)
+            //GetMesage();
+        });
+        $(document).ready(function () {
+            $("#form-msg").on("submit", function (e) {
+                e.preventDefault();
+                const messages = $("#msg").val();
+                if (!messages.trim()) {
+                    return;
+                }
+                $.ajax({
+                    url: "@Url.Action("SendGroupMessage","Chat")",
+                    type: "post",
+                    data: {
+                        message: messages,
+                        groupId: '@Model["groupId"]'
+                    }
+                }).done(function () {
+                    $("#msg").val("");
+                    connection.invoke("SendMessage", '@Model["groupId"]',messages);
+                });
+            })
+        });
+
+        function GetMesage() {
+            const GroupId = '@Model["groupId"]';
+            $.ajax({
+                url: "@Url.Action("GetGroupChatMessage","Chat")",
+                type: 'post',
+                data: { GroupId }
+            }).done(function (data) {
+
+                $(".chat-message-container").empty();
+                $.each(data, function (idx, value) {
+                    var sender = value.senderEmail === "@currentUser" ? "sender" : "";
+                    let date = value.date;
+                    date = date.split("T")[1];
+                    date = date.substr(0, 5);
+                    let html = `<div class="message-container ${sender}" >` +
+                        `<div class="message" >` +
+                        `<span>${value.message}</span>` +
+                        `</div>` +
+                        `<span class="date">${date}</span>` +
+                        ` </div>`;
+                    $(".chat-message-container").append($(html));
+
+                });
+                $(".chat-message-container").stop().animate({ scrollTop: $(".chat-message-container")[0].scrollHeight }, 1000)
+
+            })
+        }
+    </script>
+}

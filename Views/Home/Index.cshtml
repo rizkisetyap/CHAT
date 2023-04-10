@@ -1,0 +1,58 @@
+﻿@model Dictionary<string,dynamic>
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-sm-6">
+            <h1>Group Chat</h1>
+
+            <div class="form-group">
+                <label>Group</label>
+                <input type="text" id="group-name" value="" class="form-control" />
+                <button onclick="createGroup()" type="button" id="joingroup" class="btn btn-success mt-3">Create group</button>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <h4>List Group</h4>
+            <ul>
+                @foreach (var item in Model["groups"])
+                {
+                    <li>@item.Nama <a href="@Url.Action("JoinGroup","Group")?Id=@item.Id" class="btn btn-sm btn-primary">Join</a></li>
+                }
+            </ul>
+        </div>
+    </div>
+
+</div>
+
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+
+
+        });
+
+        function createGroup() {
+            const gname = $("#group-name").val();
+
+            $.ajax({
+                url: "@Url.Action("CreateGroup","Group")",
+                type: "post",
+                data: {
+                    groupName: gname
+                }
+            }).done(function () {
+                location.reload();
+            })
+        }
+    </script>
+}
